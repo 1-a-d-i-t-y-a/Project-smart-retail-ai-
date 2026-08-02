@@ -7,6 +7,13 @@ a React dashboard.
 
 ![Stack](https://img.shields.io/badge/stack-React%20%2B%20FastAPI%20%2B%20MongoDB-blue)
 ![AI](https://img.shields.io/badge/AI-Gemini%203%20Flash-orange)
+![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)
+
+## Screenshots
+
+| Overview dashboard | Sentiment module | Public FAQ browser |
+| --- | --- | --- |
+| ![Dashboard](docs/screenshots/01-dashboard.png) | ![Sentiment](docs/screenshots/03-sentiment.png) | ![FAQ Browser](docs/screenshots/02-faq-browse.png) |
 
 ## Modules
 

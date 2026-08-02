@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend · pytest
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MONGO_URL: mongodb://localhost:27017
+      DB_NAME: smart_retail_ci
+      CORS_ORIGINS: "*"
+      # Real key optional in CI. If unset, AI-dependent tests will be skipped
+      # by the pytest suite (Gemini calls will error and those tests xfail).
+      EMERGENT_LLM_KEY: ${{ secrets.EMERGENT_LLM_KEY }}
+      REACT_APP_BACKEND_URL: http://localhost:8001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend deps
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt \
+            --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+
+      - name: Start API
+        working-directory: backend
+        run: |
+          nohup uvicorn server:app --host 0.0.0.0 --port 8001 > api.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8001/api/health && break
+            sleep 1
+          done
+          curl -sf http://localhost:8001/api/health || (cat api.log && exit 1)
+
+      - name: Run pytest
+        working-directory: backend
+        run: pytest tests/backend_test.py -q --maxfail=1
+
+      - name: Upload API log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: backend/api.log
+
+  frontend:
+    name: Frontend · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        working-directory: frontend
+        env:
+          # CRA needs this at build time; use a placeholder for CI
+          REACT_APP_BACKEND_URL: http://localhost:8001
+          CI: "true"
+        run: yarn build
+
+      - name: Upload build artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build
+          retention-days: 7
