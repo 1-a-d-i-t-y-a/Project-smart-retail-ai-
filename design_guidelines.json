@@ -1,0 +1,129 @@
+{
+  "theme": "dark",
+  "archetype": "LUXURY_MEETS_PERFORMANCE",
+  "emotion": "Authoritative, sleek, futuristic, highly analytical",
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "prohibited_fonts": ["Inter", "Roboto", "Open Sans", "Lato", "Space Grotesk"],
+    "rules": [
+      "Use tracking-tight for all headings above 32px.",
+      "Overlines/labels must be Uppercase, text-xs, tracking-[0.2em].",
+      "Do not use generic 'Bold' for headers by default; utilize font-light or font-black for tension.",
+      "Never exceed text-6xl for maximum heading sizes."
+    ]
+  },
+  "colors": {
+    "background": "#020617",
+    "surface": "#0F172A",
+    "surface_hover": "#1E293B",
+    "border": "rgba(255,255,255,0.1)",
+    "primary_accent": "#F43F5E",
+    "secondary_accent": "#38BDF8",
+    "text_primary": "#F8FAFC",
+    "text_secondary": "#94A3B8",
+    "status": {
+      "positive": "#10B981",
+      "neutral": "#64748B",
+      "negative": "#EF4444"
+    },
+    "forbidden_colors": ["#7351B7", "#1B93A4"],
+    "rules": [
+      "Never use pure black (#000000) or pure grey. Always tint with blue (e.g., slate-950).",
+      "Gradients are prohibited for backgrounds; use solid, flat colors.",
+      "Ensure minimum 4.5:1 contrast for normal text and 3:1 for large text.",
+      "ALWAYS explicitly set text color on hover. Example: hover:bg-slate-800 hover:text-white."
+    ]
+  },
+  "layouts": {
+    "dashboard_grid": "MODE_B_HIGH_DENSITY",
+    "spacing_scale": "Use generous padding: p-4, p-6, p-8. Containers with borders must have internal padding.",
+    "rules": [
+      "Mobile-first responsive grids.",
+      "Grid items must be direct children of the grid container.",
+      "Override stretch behavior with align-items: start where necessary, stretch individual items.",
+      "Sidebar must remain persistent and structured cleanly."
+    ]
+  },
+  "visual_enhancers": {
+    "surfaces": [
+      "Dashboard Cards: Flat solid background (bg-slate-900), sharp 1px border (border-white/10), NO generic soft shadows.",
+      "Header/Sticky Elements: If content scrolls underneath, use Glassmorphism (backdrop-blur-xl bg-slate-950/70) with a 1px delicate inner stroke. NEVER fully transparent.",
+      "Webcam Preview Frame: Apply subtle retro-futurism (scanlines or 4-corner targeting brackets) to simulate AI face recognition.",
+      "Dropzone: 1px dashed border with hover glow (e.g., hover:border-rose-500 hover:bg-rose-500/5)."
+    ]
+  },
+  "components": {
+    "general": "Prioritize customized Shadcn UI primitives over generic HTML elements.",
+    "cards": "Go cardless or use strictly rectangular, dense, flat styles. Avoid excessive rounded corners (max 8px radius).",
+    "tables": "Use Shadcn Table. Left-align text content, right-align numerical metrics. Use the 'Grid Borders' look for technical precision.",
+    "charts": "Use Recharts wrapped in Shadcn Chart patterns. Use vibrant, thin lines for data representation that contrasts well against dark surfaces.",
+    "chatbot": "Do not use standard SMS bubbles. Use sleek, brutalist rectangular blocks with muted backgrounds for bot, and primary accent border for user.",
+    "badges": "For sentiment (Positive/Negative/Neutral), use subtle flat backgrounds with high-contrast text and 1px borders."
+  },
+  "motion": {
+    "rules": [
+      "Implement micro-interactions on all hover, click, and focus states.",
+      "Use specific transitions (e.g., transition-transform duration-200, transition-colors), NEVER use 'transition-all'.",
+      "Stagger entrance animations for lists (customer history, recent activity).",
+      "Respect prefers-reduced-motion."
+    ]
+  },
+  "accessibility": {
+    "testing": "All interactive elements (buttons, links, form inputs, menus, error messages) MUST include a 'data-testid' attribute using kebab-case role-based naming (e.g., data-testid='upload-image-dropzone').",
+    "contrast": "Maintain strict APCA/WCAG contrast ratios.",
+    "focus": "Focus states must have HIGHER contrast than default, utilizing rings (focus:ring-2 focus:ring-rose-500 focus:outline-none)."
+  },
+  "media": {
+    "image_urls": {
+      "customer_faces": [
+        {
+          "url": "https://images.unsplash.com/photo-1580489944761-15a19d654956?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwxfHxwb3J0cmFpdCUyMHNtaWxpbmclMjBjdXN0b21lciUyMGZhY2V8ZW58MHx8fHwxNzg1NjkxMTM4fDA&ixlib=rb-4.1.0&q=85",
+          "description": "Female returning customer face for recognition logs"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1531750026848-8ada78f641c2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHw0fHxwb3J0cmFpdCUyMHNtaWxpbmclMjBjdXN0b21lciUyMGZhY2V8ZW58MHx8fHwxNzg1NjkxMTM4fDA&ixlib=rb-4.1.0&q=85",
+          "description": "Male returning customer face for recognition logs"
+        }
+      ],
+      "retail_products": [
+        {
+          "url": "https://images.unsplash.com/photo-1555529771-835f59fc5efe?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHw0fHxyZXRhaWwlMjBjbG90aGluZyUyMHByb2R1Y3QlMjBpc29sYXRlZHxlbnwwfHx8fDE3ODU2OTExMzl8MA&ixlib=rb-4.1.0&q=85",
+          "description": "Retail clothing product for category classifier"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwzfHxyZXRhaWwlMjBjbG90aGluZyUyMHByb2R1Y3QlMjBpc29sYXRlZHxlbnwwfHx8fDE3ODU2OTExMzl8MA&ixlib=rb-4.1.0&q=85",
+          "description": "Close up retail clothing for classifier history"
+        }
+      ]
+    },
+    "icons": {
+      "library": "lucide-react",
+      "instruction": "Use lucide-react (already installed). Use standard scaling. For high-density tables, keep icons small (16px)."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Load and apply Outfit and Manrope fonts in your CSS.",
+    "Build a persistent left sidebar with the 5 modules.",
+    "Implement the 'Unified Dashboard' as the default view, displaying stats, Recharts donut/line charts, and a recent activity feed.",
+    "For Face Recognition, use a simulated live webcam feed with the 'customer_faces' images and an AI bounding box/overlay with the customer's name.",
+    "For the FAQ Chatbot, implement a sleek chat UI avoiding native SMS styling.",
+    "For Product Classifier, create an aesthetic drag-and-drop zone using the 'retail_products' images as classification history.",
+    "Ensure the UI uses the dark slate palette (bg-slate-950) with the primary accent (#F43F5E) used sparingly for core CTAs and active states.",
+    "Never apply transition-all in tailwind classes. Use specific transitions.",
+    "Ensure NO pure transparent backgrounds exist over interactive content; always apply appropriate solid colors or blur overlays.",
+    "Every interactive or critical element must have a 'data-testid'."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Create distinctive frontends that surprise and delight. Avoid generic AI slop.",
+    "Create depth through layered design elements with z-index hierarchy, preferring flat surfaces and 1px borders over soft muddy shadows.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur, never fully transparent without blur) for overlapping elements like sticky headers.",
+    "Do NOT apply universal transition (transition-all). Always add transitions for specific interactive elements like button, input excluding transforms.",
+    "Do NOT center align the app container, i.e., do not add `.App { text-align: center; }`.",
+    "Use modern button styles (sharp or subtle roundness max 8px) with interaction animations & color relevant to the app style.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
+    "Use generous spacing (2-3x more than usual) to give elements room to breathe.",
+    "Incorporate subtle grain textures, custom selection states, and thoughtful loading states."
+  ]
+}
