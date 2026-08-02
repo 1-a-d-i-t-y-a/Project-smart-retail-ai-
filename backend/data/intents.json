@@ -1,0 +1,100 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "howdy"],
+      "responses": [
+        "Hey there! Welcome to our store assistant. How can I help you today?",
+        "Hello! I can help with orders, returns, shipping, and more. What do you need?"
+      ]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["bye", "goodbye", "see you", "later", "thanks bye"],
+      "responses": [
+        "Thanks for stopping by. Have a great day!",
+        "Goodbye! Come back anytime."
+      ]
+    },
+    {
+      "tag": "thanks",
+      "patterns": ["thanks", "thank you", "appreciate it", "thx", "ty"],
+      "responses": [
+        "You're welcome!",
+        "Happy to help!"
+      ]
+    },
+    {
+      "tag": "store_hours",
+      "patterns": ["what are your hours", "when are you open", "store hours", "opening time", "closing time", "when do you close"],
+      "responses": [
+        "We're open Mon-Sat 9am-9pm and Sunday 10am-7pm.",
+        "Our store hours are 9am-9pm on weekdays and Saturdays, 10am-7pm on Sundays."
+      ]
+    },
+    {
+      "tag": "return_policy",
+      "patterns": ["return policy", "how do i return", "can i return", "refund", "exchange"],
+      "responses": [
+        "You can return unused items within 30 days of purchase with the original receipt for a full refund.",
+        "Returns are accepted within 30 days. Bring your receipt or order number and we'll process a refund or exchange."
+      ]
+    },
+    {
+      "tag": "shipping",
+      "patterns": ["shipping", "delivery", "how long shipping", "shipping cost", "when will my order arrive"],
+      "responses": [
+        "Standard shipping takes 3-5 business days. Express (1-2 days) is $9.99. Orders over $50 ship free.",
+        "We ship within 24 hours of order. Free shipping over $50. Express options available at checkout."
+      ]
+    },
+    {
+      "tag": "payment_methods",
+      "patterns": ["payment methods", "how can i pay", "do you accept", "credit card", "cash", "apple pay"],
+      "responses": [
+        "We accept Visa, Mastercard, Amex, Apple Pay, Google Pay, and cash in-store.",
+        "All major credit cards, mobile payments (Apple/Google Pay), and cash are accepted."
+      ]
+    },
+    {
+      "tag": "offers",
+      "patterns": ["any offers", "discounts", "sale", "coupon", "promo code", "deals"],
+      "responses": [
+        "This week: 20% off all clothing and buy-one-get-one-free on select accessories.",
+        "Check the 'Deals' page for current promos. Sign up to our newsletter for 10% off your next order."
+      ]
+    },
+    {
+      "tag": "location",
+      "patterns": ["where are you located", "your address", "location", "store address", "how do i find you"],
+      "responses": [
+        "Our flagship store is at 42 Market Street, downtown. We also have three branches, see the Locations page.",
+        "Find us at 42 Market Street or use the store locator on our website."
+      ]
+    },
+    {
+      "tag": "order_status",
+      "patterns": ["order status", "track my order", "where is my order", "tracking number"],
+      "responses": [
+        "You can track your order on the Order Status page using your order number and email.",
+        "Enter your order number on our tracking page or check the shipping email we sent you."
+      ]
+    },
+    {
+      "tag": "contact",
+      "patterns": ["contact", "customer service", "phone number", "email support", "how to reach you"],
+      "responses": [
+        "Reach us at support@smartretail.com or call +1 (555) 010-0100 (Mon-Fri 9am-6pm).",
+        "Email support@smartretail.com or call +1 (555) 010-0100 during business hours."
+      ]
+    },
+    {
+      "tag": "gift_cards",
+      "patterns": ["gift card", "gift certificate", "buy a gift"],
+      "responses": [
+        "Gift cards are available in denominations from $10 to $500, redeemable online and in-store.",
+        "Yes! Digital and physical gift cards are available on the Gift Cards page."
+      ]
+    }
+  ]
+}
