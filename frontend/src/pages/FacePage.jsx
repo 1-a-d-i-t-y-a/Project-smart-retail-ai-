@@ -187,11 +187,20 @@ export default function FacePage() {
                 <ul className="space-y-2 max-h-[520px] overflow-y-auto">
                   {customers.map((c) => (
                     <li key={c.id} data-testid={`customer-${c.id}`} className="flex items-center gap-3 p-2 border border-white/5 rounded hover:border-white/15 transition-colors">
-                      <img src={c.image_base64} alt={c.name} className="w-10 h-10 rounded object-cover border border-white/10" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-white truncate">{c.name}</div>
-                        <div className="text-[11px] text-slate-500">Visits: {c.visit_count}</div>
-                      </div>
+                      <button
+                        onClick={() => setOpenId(c.id)}
+                        data-testid={`btn-open-${c.id}`}
+                        className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                      >
+                        <img src={c.image_base64} alt={c.name} className="w-10 h-10 rounded object-cover border border-white/10" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-white truncate flex items-center gap-1.5">
+                            {c.name}
+                            {c.is_vip && <Star size={11} className="text-amber-400 fill-amber-400" />}
+                          </div>
+                          <div className="text-[11px] text-slate-500">Visits: {c.visit_count}</div>
+                        </div>
+                      </button>
                       <button data-testid={`btn-delete-${c.id}`} onClick={() => handleDelete(c.id)} className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors">
                         <Trash2 size={14} />
                       </button>
