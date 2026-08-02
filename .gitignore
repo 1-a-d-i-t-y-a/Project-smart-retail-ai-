@@ -45,3 +45,9 @@ Thumbs.db
 *.zip
 smart-retail-ai.zip
 smart-retail-ai/
+.env
+.env.*
+credentials.json
+*.pem
+*.key
+.credentials
