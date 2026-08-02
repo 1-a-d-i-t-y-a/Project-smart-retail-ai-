@@ -330,3 +330,206 @@ class TestDashboard:
         assert isinstance(arr, list) and len(arr) > 0
         kinds = {x["kind"] for x in arr}
         assert kinds.issubset({"visit", "feedback", "chat", "product"})
+
+
+
+# ----------------- New Features: Drill-down, VIP, CSV export, Public FAQs -----------------
+class TestNewFeatures:
+    """Tests for iteration-2 additions: customer detail, VIP flag, CSV exports, /faqs/public."""
+
+    customer_id = None
+    faq_id = None
+
+    def test_1_register_test_customer(self, client):
+        assert FACE_ALICE.exists()
+        b64 = _b64(FACE_ALICE)
+        r = client.post(
+            f"{API}/vision/face/register",
+            json={"name": "TEST_NF_Bob", "image_base64": b64},
+            timeout=30,
+        )
+        assert r.status_code == 200, r.text
+        d = r.json()
+        # is_vip should default to False
+        assert d.get("is_vip") is False
+        TestNewFeatures.customer_id = d["id"]
+
+    def test_2_sentiment_analyze_with_customer_id(self, client):
+        cid = TestNewFeatures.customer_id
+        assert cid, "prior test must set customer_id"
+        r = client.post(
+            f"{API}/sentiment/analyze",
+            json={"text": "Loved the friendly staff.", "source": "review", "customer_id": cid},
+            timeout=60,
+        )
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["customer_id"] == cid
+        assert d["label"] in ("positive", "negative", "neutral")
+
+    def test_3_sentiment_bulk_with_customer_id(self, client):
+        cid = TestNewFeatures.customer_id
+        r = client.post(
+            f"{API}/sentiment/bulk",
+            json={"items": ["Great deal.", "Very bad service."], "customer_id": cid},
+            timeout=90,
+        )
+        assert r.status_code == 200, r.text
+        out = r.json()
+        assert len(out) == 2
+        for item in out:
+            assert item["customer_id"] == cid
+
+    def test_4_product_classify_with_customer_id(self, client):
+        cid = TestNewFeatures.customer_id
+        b64 = _b64(PRODUCT_IMG)
+        r = client.post(
+            f"{API}/vision/product/classify",
+            json={"image_base64": b64, "filename": "attached.jpg", "customer_id": cid},
+            timeout=120,
+        )
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["customer_id"] == cid
+
+    def test_5_customer_detail_drilldown(self, client):
+        cid = TestNewFeatures.customer_id
+        r = client.get(f"{API}/vision/face/customers/{cid}", timeout=15)
+        assert r.status_code == 200, r.text
+        d = r.json()
+        # Structure
+        for k in ("customer", "visits", "feedback", "products", "sentiment_breakdown"):
+            assert k in d, f"missing {k}"
+        assert d["customer"]["id"] == cid
+        # Feedback attached (single + 2 bulk = 3)
+        assert len(d["feedback"]) >= 3, f"expected >=3 feedback, got {len(d['feedback'])}"
+        # Product attached
+        assert len(d["products"]) >= 1
+        # Sentiment breakdown keys
+        assert set(d["sentiment_breakdown"].keys()) == {"positive", "negative", "neutral"}
+        # Sum matches feedback count
+        assert sum(d["sentiment_breakdown"].values()) == len(d["feedback"])
+
+    def test_6_customer_detail_404(self, client):
+        r = client.get(f"{API}/vision/face/customers/does-not-exist-xxx", timeout=15)
+        assert r.status_code == 404
+
+    def test_7_patch_customer_vip_true(self, client):
+        cid = TestNewFeatures.customer_id
+        r = client.patch(
+            f"{API}/vision/face/customers/{cid}",
+            json={"is_vip": True},
+            timeout=15,
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["is_vip"] is True
+        # Verify persisted via list
+        r = client.get(f"{API}/vision/face/customers", timeout=15)
+        assert r.status_code == 200
+        matched = [c for c in r.json() if c["id"] == cid]
+        assert matched and matched[0]["is_vip"] is True
+
+    def test_8_patch_customer_vip_false(self, client):
+        cid = TestNewFeatures.customer_id
+        # Toggle back to false, then back to true so recognize test sees VIP
+        r = client.patch(
+            f"{API}/vision/face/customers/{cid}",
+            json={"is_vip": False},
+            timeout=15,
+        )
+        assert r.status_code == 200
+        assert r.json()["is_vip"] is False
+        # Now set to VIP again (recognize test needs this)
+        r = client.patch(
+            f"{API}/vision/face/customers/{cid}",
+            json={"is_vip": True},
+            timeout=15,
+        )
+        assert r.status_code == 200
+        assert r.json()["is_vip"] is True
+
+    def test_9_patch_customer_404(self, client):
+        r = client.patch(
+            f"{API}/vision/face/customers/nope-xxx",
+            json={"is_vip": True},
+            timeout=15,
+        )
+        assert r.status_code == 404
+
+    def test_10_patch_customer_no_fields(self, client):
+        cid = TestNewFeatures.customer_id
+        r = client.patch(
+            f"{API}/vision/face/customers/{cid}",
+            json={},
+            timeout=15,
+        )
+        assert r.status_code == 400
+
+    def test_11_recognize_returns_vip_flag(self, client):
+        # VIP was set true in test_8
+        b64 = _b64(FACE_ALICE)
+        r = client.post(f"{API}/vision/face/recognize", json={"image_base64": b64}, timeout=120)
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["matched"] is True, f"expected match, got {d}"
+        assert d["customer"]["id"] == TestNewFeatures.customer_id
+        assert d["customer"]["is_vip"] is True, "recognize response must reflect VIP flag"
+
+    def test_12_sentiment_export_csv(self, client):
+        r = client.get(f"{API}/sentiment/export.csv", timeout=30)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+        body = r.text
+        lines = body.strip().split("\n")
+        assert len(lines) >= 2, "expected header + at least one row"
+        assert lines[0].strip() == "id,text,label,confidence,source,customer_id,created_at"
+
+    def test_13_visits_export_csv(self, client):
+        r = client.get(f"{API}/vision/face/visits/export.csv", timeout=30)
+        assert r.status_code == 200
+        assert "text/csv" in r.headers.get("content-type", "")
+        body = r.text
+        lines = body.strip().split("\n")
+        assert lines[0].strip() == "visit_id,customer_id,customer_name,timestamp,is_new"
+        # We have at least one visit from recognize
+        assert len(lines) >= 2
+
+    def test_14_public_faqs_builtin(self, client):
+        r = client.get(f"{API}/chat/faqs/public", timeout=15)
+        assert r.status_code == 200
+        arr = r.json()
+        assert isinstance(arr, list)
+        builtins = [f for f in arr if f["source"] == "builtin"]
+        assert len(builtins) >= 12, f"expected >=12 built-in FAQs, got {len(builtins)}"
+        for f in builtins[:3]:
+            for k in ("tag", "question", "patterns", "answer", "source"):
+                assert k in f, f"missing key {k}"
+
+    def test_15_public_faqs_includes_custom(self, client):
+        # Add a custom FAQ then check it appears in /public
+        payload = {
+            "tag": f"TEST_NF_offer_{uuid.uuid4().hex[:6]}",
+            "patterns": ["birthday discount", "birthday offer"],
+            "responses": ["Enjoy 15% off during your birthday month!"],
+        }
+        r = client.post(f"{API}/chat/faqs", json=payload, timeout=15)
+        assert r.status_code == 200
+        TestNewFeatures.faq_id = r.json()["id"]
+
+        r = client.get(f"{API}/chat/faqs/public", timeout=15)
+        assert r.status_code == 200
+        arr = r.json()
+        custom = [f for f in arr if f["tag"] == payload["tag"]]
+        assert len(custom) == 1
+        assert custom[0]["source"] == "custom"
+        assert custom[0]["answer"] == payload["responses"][0]
+
+    def test_zz_cleanup(self, client):
+        # delete test customer
+        cid = TestNewFeatures.customer_id
+        if cid:
+            client.delete(f"{API}/vision/face/customers/{cid}", timeout=15)
+        # delete test faq
+        fid = TestNewFeatures.faq_id
+        if fid:
+            client.delete(f"{API}/chat/faqs/{fid}", timeout=15)

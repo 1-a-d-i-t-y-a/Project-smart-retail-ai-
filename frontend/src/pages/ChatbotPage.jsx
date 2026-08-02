@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Send, Plus, Trash2 } from "lucide-react";
-import { sendChatMessage, getChatHistory, getFaqs, addFaq, deleteFaq } from "../api/client";
+import { sendChatMessage, getChatHistory, getFaqs, addFaq, deleteFaq, getPublicFaqs } from "../api/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 function useSessionId() {
   const [id] = useState(() => {
@@ -28,6 +29,7 @@ export default function ChatbotPage() {
 
   // FAQ admin
   const [faqs, setFaqs] = useState([]);
+  const [publicFaqs, setPublicFaqs] = useState([]);
   const [tag, setTag] = useState("");
   const [patterns, setPatterns] = useState("");
   const [responses, setResponses] = useState("");
@@ -37,8 +39,9 @@ export default function ChatbotPage() {
     setMessages(h);
   };
   const loadFaqs = async () => setFaqs(await getFaqs());
+  const loadPublicFaqs = async () => setPublicFaqs(await getPublicFaqs());
 
-  useEffect(() => { loadHistory(); loadFaqs(); }, [sessionId]);
+  useEffect(() => { loadHistory(); loadFaqs(); loadPublicFaqs(); }, [sessionId]);
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
@@ -65,12 +68,14 @@ export default function ChatbotPage() {
     });
     setTag(""); setPatterns(""); setResponses("");
     loadFaqs();
+    loadPublicFaqs();
     toast.success("FAQ added");
   };
 
   const removeFaq = async (id) => {
     await deleteFaq(id);
     loadFaqs();
+    loadPublicFaqs();
     toast.success("FAQ removed");
   };
 
@@ -81,6 +86,7 @@ export default function ChatbotPage() {
       <Tabs defaultValue="chat">
         <TabsList className="bg-slate-900 border border-white/10">
           <TabsTrigger value="chat" data-testid="tab-chat" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400">Chat</TabsTrigger>
+          <TabsTrigger value="browse" data-testid="tab-browse" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400">Browse FAQs ({publicFaqs.length})</TabsTrigger>
           <TabsTrigger value="admin" data-testid="tab-admin" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400">FAQ admin ({faqs.length})</TabsTrigger>
         </TabsList>
 
@@ -160,6 +166,36 @@ export default function ChatbotPage() {
                 Messages are matched against a rule-based intents file first. If nothing matches confidently, Gemini 3 Flash generates a reply.
               </p>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="browse" className="mt-4">
+          <div className="p-5 bg-slate-900 border border-white/10 rounded-md">
+            <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Public</div>
+            <h3 className="font-display font-light text-xl text-white mt-1 mb-4">Frequently asked</h3>
+            {publicFaqs.length === 0 && <div className="text-sm text-slate-500 py-6">No FAQs available yet.</div>}
+            <Accordion type="single" collapsible data-testid="public-faq-accordion">
+              {publicFaqs.map((f, i) => (
+                <AccordionItem key={`${f.tag}-${i}`} value={`${f.tag}-${i}`} className="border-white/10">
+                  <AccordionTrigger data-testid={`public-faq-${f.tag}-${i}`} className="text-left hover:no-underline hover:text-rose-300 text-slate-200">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-[10px] uppercase tracking-[0.16em] text-slate-500 border border-white/10 rounded px-1.5 py-0.5 shrink-0">
+                        {f.source === "custom" ? "Custom" : "Built-in"}
+                      </span>
+                      <span className="truncate capitalize">{f.question}{/[?!.]$/.test(f.question) ? "" : "?"}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-slate-300 text-sm leading-relaxed pl-2">
+                    {f.answer}
+                    {f.patterns?.length > 1 && (
+                      <div className="mt-2 text-[10px] text-slate-500 uppercase tracking-[0.16em]">
+                        Also matches: {f.patterns.slice(1, 4).join(" · ")}
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </TabsContent>
 

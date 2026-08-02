@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { toast } from "sonner";
-import { Camera, UserPlus, ScanFace, Trash2, User } from "lucide-react";
+import { Camera, UserPlus, ScanFace, Trash2, User, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import CustomerDetailDialog from "../components/CustomerDetailDialog";
+import VipAlert from "../components/VipAlert";
 import {
   registerFace,
   recognizeFace,
   listCustomers,
   listVisits,
   deleteCustomer,
+  visitsCsvUrl,
 } from "../api/client";
 import { formatDistanceToNow } from "date-fns";
 
@@ -21,6 +24,8 @@ export default function FacePage() {
   const [lastResult, setLastResult] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [visits, setVisits] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [vipCustomer, setVipCustomer] = useState(null);
 
   const refresh = useCallback(async () => {
     const [c, v] = await Promise.all([listCustomers(), listVisits(50)]);
@@ -63,8 +68,12 @@ export default function FacePage() {
     try {
       const r = await recognizeFace(img);
       setLastResult({ kind: "recognized", ...r });
-      if (r.matched) toast.success(`Welcome back, ${r.customer.name}`);
-      else toast.info("No match — looks like a new visitor");
+      if (r.matched) {
+        toast.success(`Welcome back, ${r.customer.name}`);
+        if (r.customer.is_vip) setVipCustomer(r.customer);
+      } else {
+        toast.info("No match — looks like a new visitor");
+      }
       refresh();
     } catch (e) {
       toast.error("Recognition failed");
@@ -193,7 +202,16 @@ export default function FacePage() {
             </TabsContent>
             <TabsContent value="visits" className="mt-4">
               <div className="p-4 bg-slate-900 border border-white/10 rounded-md">
-                <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 mb-3">Visit log</div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Visit log</div>
+                  <a
+                    href={visitsCsvUrl()}
+                    data-testid="btn-export-visits"
+                    className="text-[10px] uppercase tracking-[0.16em] text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded px-2 py-1 transition-colors"
+                  >
+                    Export CSV
+                  </a>
+                </div>
                 {visits.length === 0 && (
                   <div className="text-sm text-slate-500 py-6 text-center">
                     <Camera className="mx-auto mb-2 text-slate-600" size={22} />
@@ -215,6 +233,13 @@ export default function FacePage() {
           </Tabs>
         </div>
       </div>
+      <CustomerDetailDialog
+        customerId={openId}
+        open={!!openId}
+        onOpenChange={(v) => !v && setOpenId(null)}
+        onChanged={refresh}
+      />
+      <VipAlert customer={vipCustomer} onClose={() => setVipCustomer(null)} />
     </div>
   );
 }

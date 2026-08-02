@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UploadCloud, Image as ImgIcon, Trash2 } from "lucide-react";
-import { classifyProduct, productHistory, productSummary } from "../api/client";
+import { UploadCloud, Image as ImgIcon } from "lucide-react";
+import { classifyProduct, productHistory, productSummary, listCustomers } from "../api/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 
@@ -25,12 +26,15 @@ export default function ProductPage() {
   const [history, setHistory] = useState([]);
   const [summary, setSummary] = useState([]);
   const [dragOver, setDragOver] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [attachId, setAttachId] = useState("none");
   const inputRef = useRef(null);
 
   const refresh = async () => {
-    const [h, s] = await Promise.all([productHistory(50), productSummary()]);
+    const [h, s, c] = await Promise.all([productHistory(50), productSummary(), listCustomers()]);
     setHistory(h);
     setSummary(s);
+    setCustomers(c);
   };
 
   useEffect(() => { refresh(); }, []);
@@ -54,7 +58,7 @@ export default function ProductPage() {
     if (!preview) return toast.error("Pick an image first");
     setBusy(true);
     try {
-      const r = await classifyProduct(preview, file?.name);
+      const r = await classifyProduct(preview, file?.name, attachId === "none" ? undefined : attachId);
       setResult(r);
       toast.success(`${r.category} · ${(r.confidence * 100).toFixed(0)}%`);
       refresh();
@@ -67,6 +71,23 @@ export default function ProductPage() {
   return (
     <div data-testid="product-page" className="grid grid-cols-1 lg:grid-cols-5 gap-4">
       <div className="lg:col-span-3 space-y-4">
+        <div className="p-4 bg-slate-900 border border-white/10 rounded-md flex items-center gap-3">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">Attach to</div>
+          <Select value={attachId} onValueChange={setAttachId}>
+            <SelectTrigger data-testid="product-attach-customer" className="max-w-xs bg-slate-950 border-white/10 text-white">
+              <SelectValue placeholder="No customer" />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-950 border-white/10 text-white">
+              <SelectItem value="none">No customer (anonymous)</SelectItem>
+              {customers.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} {c.is_vip ? "★" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div
           data-testid="upload-dropzone"
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}

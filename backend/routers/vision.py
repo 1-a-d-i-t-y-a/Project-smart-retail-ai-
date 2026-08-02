@@ -1,6 +1,9 @@
 """Vision routes: face recognition + product classification."""
+import csv
+import io
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from typing import List
 
 from schemas import (
@@ -8,6 +11,7 @@ from schemas import (
     RecognizeFaceRequest,
     Customer,
     CustomerPublic,
+    CustomerUpdate,
     Visit,
     RecognizeResponse,
     ClassifyProductRequest,
@@ -15,7 +19,7 @@ from schemas import (
 )
 from services.face_service import match_face
 from services.product_service import classify_product
-from db import customers, visits, products
+from db import customers, visits, products, feedback
 
 router = APIRouter(prefix="/vision", tags=["vision"])
 
@@ -78,6 +82,32 @@ async def list_customers():
     return docs
 
 
+@router.get("/face/customers/{customer_id}")
+async def customer_detail(customer_id: str):
+    c = await customers.find_one({"id": customer_id}, {"_id": 0})
+    if not c:
+        raise HTTPException(404, "customer not found")
+    v = await visits.find({"customer_id": customer_id}, {"_id": 0}).sort("timestamp", -1).to_list(500)
+    f = await feedback.find({"customer_id": customer_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    p = await products.find({"customer_id": customer_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    sent = {"positive": 0, "negative": 0, "neutral": 0}
+    for row in f:
+        sent[row["label"]] = sent.get(row["label"], 0) + 1
+    return {"customer": c, "visits": v, "feedback": f, "products": p, "sentiment_breakdown": sent}
+
+
+@router.patch("/face/customers/{customer_id}", response_model=CustomerPublic)
+async def update_customer(customer_id: str, req: CustomerUpdate):
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(400, "no fields to update")
+    r = await customers.update_one({"id": customer_id}, {"$set": updates})
+    if r.matched_count == 0:
+        raise HTTPException(404, "customer not found")
+    doc = await customers.find_one({"id": customer_id}, {"_id": 0})
+    return doc
+
+
 @router.delete("/face/customers/{customer_id}")
 async def delete_customer(customer_id: str):
     r = await customers.delete_one({"id": customer_id})
@@ -93,6 +123,22 @@ async def list_visits(limit: int = 100):
     return docs
 
 
+@router.get("/face/visits/export.csv")
+async def export_visits_csv():
+    docs = await visits.find({}, {"_id": 0}).sort("timestamp", -1).to_list(10000)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["visit_id", "customer_id", "customer_name", "timestamp", "is_new"])
+    for v in docs:
+        writer.writerow([v["id"], v["customer_id"], v["customer_name"], v["timestamp"], v.get("is_new", False)])
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=visits.csv"},
+    )
+
+
 # ---------- Products ----------
 @router.post("/product/classify", response_model=ProductClassification)
 async def product_classify(req: ClassifyProductRequest):
@@ -106,6 +152,7 @@ async def product_classify(req: ClassifyProductRequest):
         subcategory=result.get("subcategory"),
         confidence=result["confidence"],
         description=result.get("description"),
+        customer_id=req.customer_id,
     )
     await products.insert_one(doc.model_dump())
     return doc

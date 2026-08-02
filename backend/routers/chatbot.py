@@ -62,6 +62,31 @@ async def list_sessions():
     return out
 
 
+@router.get("/faqs/public")
+async def public_faqs():
+    """Return merged built-in + custom FAQs for public browsing."""
+    intents = load_intents()
+    dynamic = await faqs.find({}, {"_id": 0}).to_list(500)
+    merged = []
+    for it in intents:
+        merged.append({
+            "tag": it["tag"],
+            "question": it["patterns"][0] if it.get("patterns") else it["tag"],
+            "patterns": it.get("patterns", []),
+            "answer": it["responses"][0] if it.get("responses") else "",
+            "source": "builtin",
+        })
+    for f in dynamic:
+        merged.append({
+            "tag": f["tag"],
+            "question": f["patterns"][0] if f.get("patterns") else f["tag"],
+            "patterns": f.get("patterns", []),
+            "answer": f["responses"][0] if f.get("responses") else "",
+            "source": "custom",
+        })
+    return merged
+
+
 @router.get("/faqs", response_model=List[Faq])
 async def list_faqs():
     return await faqs.find({}, {"_id": 0}).to_list(500)

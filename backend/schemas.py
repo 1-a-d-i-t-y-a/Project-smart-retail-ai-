@@ -30,6 +30,7 @@ class Customer(BaseModel):
     created_at: str = Field(default_factory=_now)
     visit_count: int = 0
     last_seen: Optional[str] = None
+    is_vip: bool = False
 
 
 class CustomerPublic(BaseModel):
@@ -39,6 +40,12 @@ class CustomerPublic(BaseModel):
     created_at: str
     visit_count: int
     last_seen: Optional[str] = None
+    is_vip: bool = False
+
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    is_vip: Optional[bool] = None
 
 
 class Visit(BaseModel):
@@ -60,10 +67,12 @@ class RecognizeResponse(BaseModel):
 class SentimentRequest(BaseModel):
     text: str
     source: Optional[str] = None  # e.g. "review", "survey"
+    customer_id: Optional[str] = None
 
 
 class BulkSentimentRequest(BaseModel):
     items: List[str]
+    customer_id: Optional[str] = None
 
 
 class SentimentResult(BaseModel):
@@ -72,6 +81,7 @@ class SentimentResult(BaseModel):
     label: Literal["positive", "negative", "neutral"]
     confidence: float
     source: Optional[str] = None
+    customer_id: Optional[str] = None
     created_at: str = Field(default_factory=_now)
 
 
@@ -115,6 +125,7 @@ class FaqCreate(BaseModel):
 class ClassifyProductRequest(BaseModel):
     image_base64: str
     filename: Optional[str] = None
+    customer_id: Optional[str] = None
 
 
 class ProductClassification(BaseModel):
@@ -125,6 +136,7 @@ class ProductClassification(BaseModel):
     subcategory: Optional[str] = None
     confidence: float
     description: Optional[str] = None
+    customer_id: Optional[str] = None
     created_at: str = Field(default_factory=_now)
 
 

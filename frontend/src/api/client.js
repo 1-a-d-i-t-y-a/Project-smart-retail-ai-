@@ -15,10 +15,10 @@ export const getActivity = (limit = 12) =>
   client.get("/dashboard/activity", { params: { limit } }).then((r) => r.data);
 
 // Sentiment
-export const analyzeSentiment = (text, source) =>
-  client.post("/sentiment/analyze", { text, source }).then((r) => r.data);
-export const analyzeBulk = (items) =>
-  client.post("/sentiment/bulk", { items }).then((r) => r.data);
+export const analyzeSentiment = (text, source, customer_id) =>
+  client.post("/sentiment/analyze", { text, source, customer_id }).then((r) => r.data);
+export const analyzeBulk = (items, customer_id) =>
+  client.post("/sentiment/bulk", { items, customer_id }).then((r) => r.data);
 export const getSentimentHistory = (limit = 100) =>
   client.get("/sentiment/history", { params: { limit } }).then((r) => r.data);
 export const getSentimentSummary = () =>
@@ -41,15 +41,24 @@ export const recognizeFace = (image_base64) =>
   client.post("/vision/face/recognize", { image_base64 }).then((r) => r.data);
 export const listCustomers = () =>
   client.get("/vision/face/customers").then((r) => r.data);
+export const getCustomerDetail = (id) =>
+  client.get(`/vision/face/customers/${id}`).then((r) => r.data);
+export const updateCustomer = (id, patch) =>
+  client.patch(`/vision/face/customers/${id}`, patch).then((r) => r.data);
 export const deleteCustomer = (id) =>
   client.delete(`/vision/face/customers/${id}`).then((r) => r.data);
 export const listVisits = (limit = 100) =>
   client.get("/vision/face/visits", { params: { limit } }).then((r) => r.data);
+export const visitsCsvUrl = () => `${API}/vision/face/visits/export.csv`;
 
 // Vision - Products
-export const classifyProduct = (image_base64, filename) =>
-  client.post("/vision/product/classify", { image_base64, filename }).then((r) => r.data);
+export const classifyProduct = (image_base64, filename, customer_id) =>
+  client.post("/vision/product/classify", { image_base64, filename, customer_id }).then((r) => r.data);
 export const productHistory = (limit = 100) =>
   client.get("/vision/product/history", { params: { limit } }).then((r) => r.data);
 export const productSummary = () =>
   client.get("/vision/product/summary").then((r) => r.data);
+
+// Sentiment CSV / FAQ public
+export const sentimentCsvUrl = () => `${API}/sentiment/export.csv`;
+export const getPublicFaqs = () => client.get("/chat/faqs/public").then((r) => r.data);

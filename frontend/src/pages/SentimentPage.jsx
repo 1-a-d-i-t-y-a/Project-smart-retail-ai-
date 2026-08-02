@@ -1,10 +1,18 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, Layers } from "lucide-react";
+import { Sparkles, Layers, Download } from "lucide-react";
 import SentimentBadge from "../components/SentimentBadge";
-import { analyzeSentiment, analyzeBulk, getSentimentHistory, getSentimentSummary } from "../api/client";
+import {
+  analyzeSentiment,
+  analyzeBulk,
+  getSentimentHistory,
+  getSentimentSummary,
+  listCustomers,
+  sentimentCsvUrl,
+} from "../api/client";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 
@@ -16,20 +24,25 @@ export default function SentimentPage() {
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState([]);
   const [summary, setSummary] = useState({ counts: { positive: 0, negative: 0, neutral: 0 }, total: 0 });
+  const [customers, setCustomers] = useState([]);
+  const [attachId, setAttachId] = useState("none");
 
   const refresh = async () => {
-    const [h, s] = await Promise.all([getSentimentHistory(50), getSentimentSummary()]);
+    const [h, s, c] = await Promise.all([getSentimentHistory(50), getSentimentSummary(), listCustomers()]);
     setHistory(h);
     setSummary(s);
+    setCustomers(c);
   };
 
   useEffect(() => { refresh(); }, []);
+
+  const attachedId = attachId === "none" ? undefined : attachId;
 
   const runSingle = async () => {
     if (!text.trim()) return toast.error("Enter feedback text");
     setBusy(true);
     try {
-      const r = await analyzeSentiment(text.trim(), "single");
+      const r = await analyzeSentiment(text.trim(), "single", attachedId);
       toast.success(`${r.label.toUpperCase()} · ${(r.confidence * 100).toFixed(0)}%`);
       setText("");
       refresh();
@@ -42,7 +55,7 @@ export default function SentimentPage() {
     if (items.length === 0) return toast.error("Add one review per line");
     setBusy(true);
     try {
-      await analyzeBulk(items);
+      await analyzeBulk(items, attachedId);
       toast.success(`Analysed ${items.length} reviews`);
       setBulk("");
       refresh();
@@ -55,6 +68,32 @@ export default function SentimentPage() {
   return (
     <div data-testid="sentiment-page" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 space-y-4">
+        <div className="p-4 bg-slate-900 border border-white/10 rounded-md flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500 whitespace-nowrap">Attach to</div>
+            <Select value={attachId} onValueChange={setAttachId}>
+              <SelectTrigger data-testid="attach-customer-select" className="max-w-xs bg-slate-950 border-white/10 text-white">
+                <SelectValue placeholder="No customer" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-950 border-white/10 text-white">
+                <SelectItem value="none">No customer (anonymous)</SelectItem>
+                {customers.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} {c.is_vip ? "★" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <a
+            href={sentimentCsvUrl()}
+            data-testid="btn-export-sentiment"
+            className="text-[10px] uppercase tracking-[0.16em] text-rose-400 hover:text-rose-300 border border-rose-500/30 rounded px-3 py-1.5 transition-colors flex items-center gap-1.5"
+          >
+            <Download size={12} /> Export CSV
+          </a>
+        </div>
+
         <div className="p-5 bg-slate-900 border border-white/10 rounded-md">
           <div className="text-[10px] uppercase tracking-[0.22em] text-slate-500">Single review</div>
           <h3 className="font-display font-light text-xl text-white mt-1 mb-4">Analyse a single feedback</h3>
